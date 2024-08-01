@@ -3,20 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Snake Game</title>
+    <title>Ultimate Snake Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Enhanced Snake Game</h1>
-        <div class="instructions">
-            <p>Use arrow keys or WASD to move the snake. Eat food to grow and earn points. Avoid obstacles and don't collide with yourself!</p>
-        </div>
-        <canvas id="gameCanvas" width="600" height="600"></canvas>
-        <div class="game-info">
-            <span class="score-container">Score: <span id="score">0</span></span>
-            <span class="high-score-container">High Score: <span id="highScore">0</span></span>
-            <span class="level-container">Level: <span id="level">1</span></span>
+        <h1>Ultimate Snake Game</h1>
+        <div class="game-area">
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
+            <div class="side-panel">
+                <div class="game-info">
+                    <span class="score-container">Score: <span id="score">0</span></span>
+                    <span class="high-score-container">High Score: <span id="highScore">0</span></span>
+                    <span class="level-container">Level: <span id="level">1</span></span>
+                    <span class="time-container">Time: <span id="time">00:00</span></span>
+                </div>
+                <div class="power-ups">
+                    <h3>Power-ups</h3>
+                    <div id="powerUpList"></div>
+                </div>
+                <div class="achievements">
+                    <h3>Achievements</h3>
+                    <div id="achievementList"></div>
+                </div>
+            </div>
         </div>
         <div class="controls">
             <button id="startButton">Start Game</button>
@@ -29,9 +39,24 @@
                 <option value="easy">Easy</option>
                 <option value="medium" selected>Medium</option>
                 <option value="hard">Hard</option>
+                <option value="extreme">Extreme</option>
             </select>
             <label for="soundToggle">Sound:</label>
             <input type="checkbox" id="soundToggle" checked>
+            <label for="themeSelect">Theme:</label>
+            <select id="themeSelect">
+                <option value="classic">Classic</option>
+                <option value="neon">Neon</option>
+                <option value="retro">Retro</option>
+            </select>
+        </div>
+    </div>
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <p>Your score: <span id="finalScore"></span></p>
+            <p>High score: <span id="finalHighScore"></span></p>
+            <button id="playAgainButton">Play Again</button>
         </div>
     </div>
     <script src="script.js"></script>
