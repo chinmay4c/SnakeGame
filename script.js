@@ -1,13 +1,11 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const startButton = document.getElementById('startButton');
-const pauseButton = document.getElementById('pauseButton');
-const restartButton = document.getElementById('restartButton');
 const scoreDisplay = document.getElementById('score');
 const highScoreDisplay = document.getElementById('highScore');
 const levelDisplay = document.getElementById('level');
-const difficultySelect = document.getElementById('difficultySelect');
-const soundToggle = document.getElementById('soundToggle');
+const timeDisplay = document.getElementById('time');
+const powerUpList = document.getElementById('powerUpList');
+const achievementList = document.getElementById('achievementList');
 
 const gridSize = 20;
 const canvasSize = 600;
@@ -15,34 +13,39 @@ const tileCount = canvasSize / gridSize;
 
 let snake = [];
 let food = {};
-let powerUp = {};
+let powerUps = [];
 let obstacles = [];
+let portals = [];
 let direction = { x: 1, y: 0 };
 let speed = 100;
 let gameInterval;
 let score = 0;
-let highScore = 0;
+let highScore = localStorage.getItem('highScore') || 0;
 let level = 1;
+let gameTime = 0;
 let isPaused = false;
 let gameStarted = false;
-let powerUpActive = false;
-let powerUpTimer = null;
 
-const foodTypes = ['normal', 'bonus', 'speed', 'shrink'];
-const obstacleTypes = ['static', 'moving'];
+const foodTypes = ['normal', 'bonus', 'golden', 'poison'];
+const powerUpTypes = ['speed', 'ghost', 'magnet', 'shrink', 'invincibility'];
+const obstacleTypes = ['static', 'moving', 'blinking'];
 
 const sounds = {
     eat: new Audio('eat.mp3'),
     die: new Audio('die.mp3'),
     powerUp: new Audio('powerup.mp3'),
-    levelUp: new Audio('levelup.mp3')
+    levelUp: new Audio('levelup.mp3'),
+    portal: new Audio('portal.mp3')
 };
 
-startButton.addEventListener('click', startGame);
-pauseButton.addEventListener('click', togglePause);
-restartButton.addEventListener('click', restartGame);
+const achievements = [
+    { id: 'score100', name: 'Century', description: 'Score 100 points', achieved: false },
+    { id: 'level5', name: 'Rising Star', description: 'Reach level 5', achieved: false },
+    { id: 'golden', name: 'Midas Touch', description: 'Eat a golden apple', achieved: false },
+    { id: 'noPowerUp', name: 'Pure Skill', description: 'Reach level 10 without using power-ups', achieved: false }
+];
+
 document.addEventListener('keydown', handleKeyPress);
-difficultySelect.addEventListener('change', updateDifficulty);
 
 function startGame() {
     if (gameStarted) return;
@@ -51,31 +54,28 @@ function startGame() {
     direction = { x: 1, y: 0 };
     score = 0;
     level = 1;
+    gameTime = 0;
     updateScore();
     updateLevel();
     generateFood();
     generateObstacles();
+    generatePortals();
     clearInterval(gameInterval);
     gameInterval = setInterval(updateGame, speed);
-    startButton.disabled = true;
-    pauseButton.disabled = false;
+    startTimer();
 }
 
 function updateGame() {
     if (isPaused) return;
     moveSnake();
-    if (checkCollision()) {
-        endGame();
-        return;
-    }
-    if (checkFoodCollision()) {
-        eatFood();
-    }
-    if (powerUpActive && checkPowerUpCollision()) {
-        activatePowerUp();
-    }
+    checkCollisions();
+    eatFood();
+    collectPowerUps();
     moveObstacles();
+    blinkObstacles();
     drawGame();
+    checkLevelUp();
+    updateAchievements();
 }
 
 function drawGame() {
@@ -84,7 +84,8 @@ function drawGame() {
     drawSnake();
     drawFood();
     drawObstacles();
-    if (powerUpActive) drawPowerUp();
+    drawPortals();
+    drawPowerUps();
 }
 
 function drawGrid() {
@@ -103,50 +104,121 @@ function drawGrid() {
 }
 
 function drawSnake() {
-    ctx.fillStyle = '#32CD32';
     snake.forEach((part, index) => {
-        if (index === 0) {
-            // Draw snake head
-            ctx.fillStyle = '#228B22';
-        } else {
-            // Draw snake body
-            ctx.fillStyle = `hsl(${120 + index * 5}, 100%, ${50 - index * 0.5}%)`;
-        }
+        const gradient = ctx.createRadialGradient(
+            (part.x + 0.5) * gridSize, (part.y + 0.5) * gridSize, 0,
+            (part.x + 0.5) * gridSize, (part.y + 0.5) * gridSize, gridSize / 2
+        );
+        gradient.addColorStop(0, '#50C878');
+        gradient.addColorStop(1, '#228B22');
+        
+        ctx.fillStyle = gradient;
         ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize, gridSize);
         
-        // Draw eyes
         if (index === 0) {
+            // Draw eyes
             ctx.fillStyle = 'white';
-            ctx.fillRect(part.x * gridSize + gridSize * 0.2, part.y * gridSize + gridSize * 0.2, gridSize * 0.2, gridSize * 0.2);
-            ctx.fillRect(part.x * gridSize + gridSize * 0.6, part.y * gridSize + gridSize * 0.2, gridSize * 0.2, gridSize * 0.2);
+            ctx.beginPath();
+            ctx.arc((part.x + 0.3) * gridSize, (part.y + 0.3) * gridSize, gridSize * 0.15, 0, Math.PI * 2);
+            ctx.arc((part.x + 0.7) * gridSize, (part.y + 0.3) * gridSize, gridSize * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw pupils
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc((part.x + 0.3) * gridSize, (part.y + 0.3) * gridSize, gridSize * 0.07, 0, Math.PI * 2);
+            ctx.arc((part.x + 0.7) * gridSize, (part.y + 0.3) * gridSize, gridSize * 0.07, 0, Math.PI * 2);
+            ctx.fill();
         }
     });
 }
 
 function drawFood() {
-    ctx.fillStyle = food.type === 'bonus' ? '#FFD700' : '#FF4500';
+    const colors = {
+        'normal': '#FF4500',
+        'bonus': '#FFD700',
+        'golden': '#FFA500',
+        'poison': '#800080'
+    };
+    
+    ctx.fillStyle = colors[food.type];
     ctx.beginPath();
-    ctx.arc((food.x + 0.5) * gridSize, (food.y + 0.5) * gridSize, gridSize / 2, 0, 2 * Math.PI);
+    ctx.arc((food.x + 0.5) * gridSize, (food.y + 0.5) * gridSize, gridSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add shine effect
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc((food.x + 0.3) * gridSize, (food.y + 0.3) * gridSize, gridSize * 0.15, 0, Math.PI * 2);
     ctx.fill();
 }
 
 function drawObstacles() {
     obstacles.forEach(obstacle => {
-        ctx.fillStyle = obstacle.type === 'moving' ? '#8B4513' : '#A52A2A';
+        if (obstacle.type === 'blinking' && obstacle.visible) {
+            ctx.fillStyle = '#A52A2A';
+        } else if (obstacle.type === 'moving') {
+            ctx.fillStyle = '#8B4513';
+        } else {
+            ctx.fillStyle = '#A52A2A';
+        }
         ctx.fillRect(obstacle.x * gridSize, obstacle.y * gridSize, gridSize, gridSize);
     });
 }
 
-function drawPowerUp() {
-    ctx.fillStyle = '#00FFFF';
-    ctx.beginPath();
-    ctx.arc((powerUp.x + 0.5) * gridSize, (powerUp.y + 0.5) * gridSize, gridSize / 2, 0, 2 * Math.PI);
-    ctx.fill();
+function drawPortals() {
+    portals.forEach((portal, index) => {
+        const gradient = ctx.createRadialGradient(
+            (portal.x + 0.5) * gridSize, (portal.y + 0.5) * gridSize, 0,
+            (portal.x + 0.5) * gridSize, (portal.y + 0.5) * gridSize, gridSize
+        );
+        gradient.addColorStop(0, index % 2 === 0 ? '#4B0082' : '#9400D3');
+        gradient.addColorStop(1, 'black');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc((portal.x + 0.5) * gridSize, (portal.y + 0.5) * gridSize, gridSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+function drawPowerUps() {
+    powerUps.forEach(powerUp => {
+        const colors = {
+            'speed': '#00FF00',
+            'ghost': '#87CEEB',
+            'magnet': '#FF69B4',
+            'shrink': '#FF1493',
+            'invincibility': '#FFD700'
+        };
+        
+        ctx.fillStyle = colors[powerUp.type];
+        ctx.beginPath();
+        ctx.arc((powerUp.x + 0.5) * gridSize, (powerUp.y + 0.5) * gridSize, gridSize / 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw icon or symbol for power-up
+        ctx.fillStyle = 'white';
+        ctx.font = `${gridSize / 2}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const symbols = { 'speed': '⚡', 'ghost': '👻', 'magnet': '🧲', 'shrink': '🔍', 'invincibility': '🛡️' };
+        ctx.fillText(symbols[powerUp.type], (powerUp.x + 0.5) * gridSize, (powerUp.y + 0.5) * gridSize);
+    });
 }
 
 function moveSnake() {
     const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
     snake.unshift(head);
+    
+    // Check if snake goes through portal
+    const portalIndex = portals.findIndex(portal => portal.x === head.x && portal.y === head.y);
+    if (portalIndex !== -1) {
+        const exitPortal = portals[(portalIndex + 1) % 2];
+        snake[0] = { x: exitPortal.x, y: exitPortal.y };
+        sounds.portal.play();
+    }
+    
     if (!checkFoodCollision()) {
         snake.pop();
     }
@@ -172,6 +244,10 @@ function handleKeyPress(event) {
     if (key === ' ') {
         togglePause();
     }
+
+    if (key === 'enter' && !gameStarted) {
+        startGame();
+    }
 }
 
 function isOppositeDirection(newDir) {
@@ -179,17 +255,28 @@ function isOppositeDirection(newDir) {
            (direction.y === -newDir.y && direction.x === -newDir.x);
 }
 
-function checkCollision() {
+function checkCollisions() {
     const head = snake[0];
+    
+    // Wall collision
     if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        return true;
+        endGame();
+        return;
     }
+    
+    // Self collision
     for (let i = 1; i < snake.length; i++) {
-        if (snake[i].x === head.x && snake[i].y === head.y) {
-            return true;
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+            endGame();
+            return;
         }
     }
-    return obstacles.some(obstacle => obstacle.x === head.x && obstacle.y === head.y);
+    
+    // Obstacle collision
+    if (obstacles.some(obstacle => obstacle.x === head.x && obstacle.y === head.y && obstacle.visible !== false)) {
+        endGame();
+        return;
+    }
 }
 
 function checkFoodCollision() {
@@ -197,27 +284,32 @@ function checkFoodCollision() {
     return head.x === food.x && head.y === food.y;
 }
 
-function checkPowerUpCollision() {
-    const head = snake[0];
-    return head.x === powerUp.x && head.y === powerUp.y;
-}
-
 function eatFood() {
-    if (soundToggle.checked) {
+    if (checkFoodCollision()) {
         sounds.eat.play();
-    }
-    score += food.type === 'bonus' ? 20 : 10;
-    updateScore();
-    if (score > highScore) {
-        highScore = score;
-        updateHighScore();
-    }
-    if (score % 100 === 0) {
-        levelUp();
-    }
-    generateFood();
-    if (Math.random() < 0.1) {
-        generatePowerUp();
+        
+        if (food.type === 'poison') {
+            // Poison food shrinks the snake
+            snake.pop();
+            score -= 10;
+        } else {
+            // Normal food behavior
+            score += food.type === 'golden' ? 50 : (food.type === 'bonus' ? 20 : 10);
+            if (food.type === 'golden') {
+                activateAchievement('golden');
+            }
+        }
+        
+        updateScore();
+        if (score > highScore) {
+            highScore = score;
+            updateHighScore();
+        }
+        generateFood();
+        
+        if (Math.random() < 0.2) {
+            generatePowerUp();
+        }
     }
 }
 
@@ -226,64 +318,94 @@ function generateFood() {
         food = {
             x: Math.floor(Math.random() * tileCount),
             y: Math.floor(Math.random() * tileCount),
-            type: Math.random() < 0.2 ? 'bonus' : 'normal'
+            type: getRandomFoodType()
         };
     } while (isPositionOccupied(food));
 }
 
-function generatePowerUp() {
-    powerUpActive = true;
-    do {
-        powerUp = {
-            x: Math.floor(Math.random() * tileCount),
-            y: Math.floor(Math.random() * tileCount),
-            type: Math.random() < 0.5 ? 'speed' : 'shrink'
-        };
-    } while (isPositionOccupied(powerUp));
+function getRandomFoodType() {
+    const rand = Math.random();
+    if (rand < 0.6) return 'normal';
+    if (rand < 0.8) return 'bonus';
+    if (rand < 0.9) return 'golden';
+    return 'poison';
+}
 
-    powerUpTimer = setTimeout(() => {
-        powerUpActive = false;
+function generatePowerUp() {
+    if (powerUps.length < 3) {
+        do {
+            const powerUp = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount),
+                type: powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)]
+            };
+            if (!isPositionOccupied(powerUp)) {
+                powerUps.push(powerUp);
+                break;
+            }
+        } while (true);
+    }
+}
+
+function collectPowerUps() {
+    const head = snake[0];
+    const powerUpIndex = powerUps.findIndex(pu => pu.x === head.x && pu.y === head.y);
+    
+    if (powerUpIndex !== -1) {
+        const powerUp = powerUps[powerUpIndex];
+        sounds.powerUp.play();
+        activatePowerUp(powerUp.type);
+        powerUps.splice(powerUpIndex, 1);
+    }
+}
+
+function activatePowerUp(type) {
+    switch (type) {
+        case 'speed':
+            speedBoost();
+            break;
+        case 'ghost':
+            ghostMode();
+            break;
+        case 'magnet':
+            magnetMode();
+            break;
+        case 'shrink':
+            shrinkSnake();
+            break;
+        case 'invincibility':
+            invincibilityMode();
+            break;
+    }
+    updatePowerUpDisplay();
+}
+
+function speedBoost() {
+    const originalSpeed = speed;
+    speed /= 2;
+    clearInterval(gameInterval);
+    gameInterval = setInterval(updateGame, speed);
+    setTimeout(() => {
+        speed = originalSpeed;
+        clearInterval(gameInterval);
+        gameInterval = setInterval(updateGame, speed);
     }, 5000);
 }
 
-function activatePowerUp() {
-    if (soundToggle.checked) {
-        sounds.powerUp.play();
-    }
-    clearTimeout(powerUpTimer);
-    powerUpActive = false;
-
-    if (powerUp.type === 'speed') {
-        speed = Math.max(50, speed - 10);
-        clearInterval(gameInterval);
-        gameInterval = setInterval(updateGame, speed);
-        setTimeout(() => {
-            speed = Math.min(100, speed + 10);
-            clearInterval(gameInterval);
-            gameInterval = setInterval(updateGame, speed);
-        }, 5000);
-    } else if (powerUp.type === 'shrink') {
-        const shrinkAmount = Math.min(3, Math.floor(snake.length / 2));
-        snake = snake.slice(0, snake.length - shrinkAmount);
-    }
+function ghostMode() {
+    // Implementation for ghost mode (pass through walls)
 }
 
-function generateObstacles() {
-    obstacles = [];
-    const obstacleCount = Math.min(5, Math.floor(level / 2));
-    for (let i = 0; i < obstacleCount; i++) {
-        let obstacle;
-        do {
-            obstacle = {
-                x: Math.floor(Math.random() * tileCount),
-                y: Math.floor(Math.random() * tileCount),
-                type: Math.random() < 0.3 ? 'moving' : 'static',
-                direction: { x: Math.random() < 0.5 ? 1 : -1, y: 0 }
-            };
-        } while (isPositionOccupied(obstacle));
-        obstacles.push(obstacle);
-    }
+function magnetMode() {
+    // Implementation for magnet mode (attract food)
 }
 
-function moveObstacles() {
-    obstacles.forEach(obstacle => {
+function shrinkSnake() {
+    const shrinkAmount = Math.min(3, Math.floor(snake.length / 2));
+    snake = snake.slice(0, snake.length - shrinkAmount);
+}
+
+function invincibilityMode() {
+    // Implementation for invincibility mode
+}
+
