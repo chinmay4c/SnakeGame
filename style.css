@@ -1,28 +1,45 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #e5e5e5;
+    background: linear-gradient(135deg, #c3ec52, #0ba29d);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
     margin: 0;
+    color: #333;
 }
 
 .container {
-    background: #ffffff;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     text-align: center;
     max-width: 500px;
     width: 100%;
 }
 
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: #007BFF;
+    font-weight: 700;
+}
+
 canvas {
-    border: 1px solid #dddddd;
-    border-radius: 5px;
-    background-color: #f0f0f0;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.score-container {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #555;
 }
 
 .controls {
@@ -37,10 +54,12 @@ button {
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.3s, transform 0.3s;
-    border-radius: 6px;
+    border-radius: 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-size: 1.1em;
 }
 
 button:hover {
     background-color: #0056b3;
-    transform: scale(1.03);
+    transform: scale(1.05);
 }

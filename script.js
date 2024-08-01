@@ -1,6 +1,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton');
+const scoreDisplay = document.getElementById('score');
 
 const gridSize = 20;
 const canvasSize = 400;
@@ -11,6 +12,7 @@ let food = {};
 let direction = { x: 1, y: 0 };
 let speed = 150;
 let gameInterval;
+let score = 0;
 
 startButton.addEventListener('click', startGame);
 document.addEventListener('keydown', changeDirection);
@@ -18,6 +20,8 @@ document.addEventListener('keydown', changeDirection);
 function startGame() {
     snake = [{ x: 10, y: 10 }];
     direction = { x: 1, y: 0 };
+    score = 0;
+    updateScore();
     generateFood();
     clearInterval(gameInterval);
     gameInterval = setInterval(updateGame, speed);
@@ -33,6 +37,8 @@ function updateGame() {
     if (checkFoodCollision()) {
         growSnake();
         generateFood();
+        increaseSpeed();
+        updateScore();
     }
     drawGame();
 }
@@ -95,6 +101,19 @@ function checkFoodCollision() {
 function growSnake() {
     const tail = snake[snake.length - 1];
     snake.push({ x: tail.x, y: tail.y });
+    score += 10;
+}
+
+function increaseSpeed() {
+    if (speed > 50) {
+        speed -= 5;
+        clearInterval(gameInterval);
+        gameInterval = setInterval(updateGame, speed);
+    }
+}
+
+function updateScore() {
+    scoreDisplay.textContent = score;
 }
 
 function generateFood() {
