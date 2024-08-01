@@ -1,178 +1,99 @@
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Roboto', sans-serif;
     background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    margin: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    color: #fff;
-}
-
-.container {
-    background: rgba(0, 0, 0, 0.8);
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 900px;
-    width: 100%;
+    height: 100vh;
+    overflow: hidden;
 }
 
 h1 {
-    font-size: 2.5em;
     margin-bottom: 20px;
-    color: #FFD700;
-    font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-size: 2em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: fadeIn 1s ease-in-out;
 }
 
-.game-area {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 20px;
+#gameCanvas {
+    border: 5px solid #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background-color: #000;
+    transition: transform 0.3s ease-in-out;
 }
 
-canvas {
-    border: 2px solid #FFD700;
-    border-radius: 10px;
-    background-color: #2b2b2b;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.side-panel {
-    width: 250px;
-    margin-left: 20px;
-    text-align: left;
-}
-
-.game-info {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    font-size: 1.2em;
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-.score-container, .high-score-container, .level-container, .time-container {
-    color: #FFD700;
-}
-
-.power-ups, .achievements {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 15px;
-}
-
-.power-ups h3, .achievements h3 {
-    margin-top: 0;
-    color: #FFD700;
-}
-
-#powerUpList, #achievementList {
-    font-size: 0.9em;
-}
-
-.controls {
-    margin-top: 15px;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-button {
-    background-color: #FFD700;
-    color: #333;
-    border: none;
-    padding: 12px 24px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s, transform 0.3s;
-    border-radius: 30px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    font-size: 1.1em;
-}
-
-button:hover {
-    background-color: #FFBF00;
+#gameCanvas:hover {
     transform: scale(1.05);
 }
 
-button:active {
-    transform: scale(0.95);
-}
-
-.settings {
-    margin-top: 20px;
+.controls {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
+    justify-content: space-around;
+    margin-top: 20px;
+    width: 80%;
+    max-width: 600px;
+    animation: fadeIn 2s ease-in-out;
 }
 
-select, input[type="checkbox"] {
-    margin-left: 5px;
+.controls button, .controls select {
+    background: #764ba2;
+    border: none;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 1em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
 }
 
-.modal {
+.controls button:hover, .controls select:hover {
+    background: #667eea;
+}
+
+#gameOverModal {
     display: none;
     position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
     padding: 20px;
-    border: 1px solid #888;
-    width: 300px;
-    text-align: center;
     border-radius: 10px;
-    color: #333;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    animation: fadeIn 1s ease-in-out;
 }
 
-#playAgainButton {
-    margin-top: 20px;
+#gameOverModal h2 {
+    margin-bottom: 20px;
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+#gameOverModal button {
+    background: #667eea;
+    border: none;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 1em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
 }
 
-.pulse {
-    animation: pulse 0.5s;
+#gameOverModal button:hover {
+    background: #764ba2;
 }
 
-@media (max-width: 900px) {
-    .container {
-        max-width: 100%;
-        padding: 15px;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
     }
-    
-    .game-area {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .side-panel {
-        width: 100%;
-        margin-left: 0;
-        margin-top: 20px;
-    }
-    
-    canvas {
-        max-width: 100%;
-        height: auto;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

@@ -312,3 +312,59 @@ function teleportSnake(portal) {
     playSound('portal');
     // Implement teleportation logic
 }
+function eatFood() {
+    score += food.type === 'normal' ? 10 : food.type === 'bonus' ? 20 : food.type === 'golden' ? 50 : -10;
+    generateFood();
+    createParticles(food.x * gridSize, food.y * gridSize);
+    updateUI();
+    playSound('eat');
+    if (score >= level * 100) {
+        levelUp();
+    }
+}
+
+function createParticles(x, y) {
+    const particleCount = 20;
+    const particles = [];
+
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            size: Math.random() * 5 + 2,
+            life: Math.random() * 30 + 20
+        });
+    }
+
+    animateParticles(particles);
+}
+
+function animateParticles(particles) {
+    const animationInterval = setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGame();
+        
+        particles.forEach((particle, index) => {
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+            particle.size *= 0.95;
+            particle.life--;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + (particle.life / 50) + ')';
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (particle.life <= 0) {
+                particles.splice(index, 1);
+            }
+        });
+
+        if (particles.length === 0) {
+            clearInterval(animationInterval);
+        }
+    }, 30);
+}
+
