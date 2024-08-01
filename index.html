@@ -3,18 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game</title>
+    <title>Enhanced Snake Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Snake Game</h1>
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-        <div class="score-container">
-            <span>Score: <span id="score">0</span></span>
+        <h1>Enhanced Snake Game</h1>
+        <div class="instructions">
+            <p>Use arrow keys or WASD to move the snake. Eat food to grow and earn points. Avoid obstacles and don't collide with yourself!</p>
+        </div>
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        <div class="game-info">
+            <span class="score-container">Score: <span id="score">0</span></span>
+            <span class="high-score-container">High Score: <span id="highScore">0</span></span>
+            <span class="level-container">Level: <span id="level">1</span></span>
         </div>
         <div class="controls">
             <button id="startButton">Start Game</button>
+            <button id="pauseButton">Pause</button>
+            <button id="restartButton">Restart</button>
+        </div>
+        <div class="settings">
+            <label for="difficultySelect">Difficulty:</label>
+            <select id="difficultySelect">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <label for="soundToggle">Sound:</label>
+            <input type="checkbox" id="soundToggle" checked>
         </div>
     </div>
     <script src="script.js"></script>

@@ -3,14 +3,14 @@ const ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton');
 const scoreDisplay = document.getElementById('score');
 
-const gridSize = 20;
-const canvasSize = 400;
+const gridSize = 30;
+const canvasSize = 600;
 const tileCount = canvasSize / gridSize;
 
 let snake = [];
 let food = {};
 let direction = { x: 1, y: 0 };
-let speed = 150;
+let speed = 100;
 let gameInterval;
 let score = 0;
 
@@ -50,14 +50,14 @@ function drawGame() {
 }
 
 function drawSnake() {
-    ctx.fillStyle = 'green';
+    ctx.fillStyle = '#32CD32';
     snake.forEach(part => {
         ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize, gridSize);
     });
 }
 
 function drawFood() {
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = '#FF4500';
     ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
 }
 
